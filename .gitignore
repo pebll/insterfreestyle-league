@@ -1,0 +1,4 @@
+node_modules/
+tournament-data.json
+npm-debug.log
+.DS_Store

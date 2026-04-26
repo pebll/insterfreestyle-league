@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Insterfreestyle League</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      background: #faf8f3;
+      color: #333;
+      line-height: 1.6;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: #fffefb;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 30px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #e8e4db;
+    }
+
+    h1 {
+      font-size: 32px;
+      color: #3d3226;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      color: #8b7d6b;
+      font-size: 16px;
+    }
+
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f5f1e8;
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .login-btn {
+      background: #c9a961;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .login-btn:hover {
+      background: #b89851;
+    }
+
+    button.logout {
+      background: #95a5a6 !important;
+    }
+
+    button.logout:hover {
+      background: #7f8c8d !important;
+    }
+
+    .section {
+      margin-bottom: 30px;
+    }
+
+    .section-title {
+      font-size: 20px;
+      color: #3d3226;
+      margin-bottom: 15px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #e8e4db;
+    }
+
+    input, select, button {
+      font-family: inherit;
+      font-size: 14px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #d4cfc3;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      background: white;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: #c9a961;
+    }
+
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: #c9a961;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #b89851;
+    }
+
+    .btn-secondary {
+      background: #95a5a6;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: #7f8c8d;
+    }
+
+    .btn-warning {
+      background: #e67e22;
+      color: white;
+    }
+
+    .btn-warning:hover {
+      background: #d35400;
+    }
+
+    .btn-danger {
+      background: #e74c3c;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #c0392b;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+      flex-wrap: wrap;
+    }
+
+    .btn-row button {
+      flex: 1;
+      min-width: 120px;
+    }
+
+    .player-item {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .player-item span {
+      min-width: 30px;
+      font-weight: bold;
+      color: #7f8c8d;
+    }
+
+    .player-item input {
+      flex: 1;
+      margin-bottom: 0;
+    }
+
+    .player-item button {
+      padding: 10px 15px;
+      min-width: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #e8e4db;
+    }
+
+    th {
+      background: #f5f1e8;
+      font-weight: 600;
+      color: #3d3226;
+      position: sticky;
+      top: 0;
+    }
+
+    tbody tr:hover {
+      background: #faf8f3;
+    }
+
+    .center { text-align: center; }
+
+    .empty {
+      text-align: center;
+      color: #8b7d6b;
+      font-style: italic;
+      padding: 20px;
+    }
+
+    .podium {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+
+    .podium-item {
+      text-align: center;
+      padding: 20px;
+      border-radius: 8px;
+      min-width: 150px;
+      background: #f5f1e8;
+      border: 2px solid #e8e4db;
+    }
+
+    .podium-item.first {
+      border-color: #c9a961;
+      background: #faf8ef;
+    }
+
+    .podium-item.second {
+      border-color: #a8a8a8;
+      background: #f5f5f5;
+    }
+
+    .podium-item.third {
+      border-color: #cd7f32;
+      background: #fff5e6;
+    }
+
+    .podium-emoji {
+      font-size: 40px;
+      margin-bottom: 10px;
+    }
+
+    .podium-name {
+      font-weight: bold;
+      font-size: 16px;
+      margin-bottom: 5px;
+      color: #3d3226;
+    }
+
+    .podium-points {
+      color: #8b7d6b;
+      font-size: 14px;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: #fffefb;
+      padding: 30px;
+      border-radius: 8px;
+      max-width: 400px;
+      width: 90%;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+
+    .modal-content h3 {
+      margin-bottom: 20px;
+      color: #3d3226;
+    }
+
+    .error-msg {
+      color: #e74c3c;
+      font-size: 13px;
+      margin-top: 5px;
+      min-height: 18px;
+    }
+
+    .status-message {
+      padding: 12px;
+      border-radius: 4px;
+      margin-top: 15px;
+      font-size: 14px;
+      background: #e8f5e9;
+      color: #2e7d32;
+      border: 1px solid #c8e6c9;
+    }
+
+    .scroll-container {
+      max-height: 500px;
+      overflow-y: auto;
+    }
+
+    .round-header {
+      background: #f5f1e8;
+      font-weight: bold;
+      padding: 12px;
+      color: #3d3226;
+      border-top: 2px solid #c9a961;
+      border-bottom: 2px solid #c9a961;
+    }
+
+    .round-header.current {
+      background: #fff3cd;
+      border-color: #f39c12;
+      color: #856404;
+    }
+
+    .round-group {
+      border-left: 3px solid transparent;
+    }
+
+    .round-group.current {
+      border-left-color: #f39c12;
+      background: #fffef5;
+    }
+
+    .round-group.future {
+      color: #bbb;
+      background: #fafafa;
+    }
+
+    .bye-indicator {
+      display: inline-block;
+      background: #e8f5e9;
+      color: #2e7d32;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-left: 10px;
+    }
+
+    .bye-row {
+      background: #f1f8f4 !important;
+    }
+
+    .bye-row.current {
+      background: #fffef5 !important;
+      border-left-color: #2e7d32 !important;
+    }
+
+    .round-header.future {
+      background: #fafafa;
+      color: #bbb;
+      border-color: #e0e0e0;
+    }
+
+    .admin-notice {
+      background: #fff9e6;
+      border: 2px solid #c9a961;
+      border-radius: 6px;
+      padding: 15px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .admin-notice strong {
+      color: #b89851;
+      font-size: 16px;
+    }
+
+    .round-controls {
+      background: #fff9e6;
+      border: 2px solid #c9a961;
+      border-radius: 6px;
+      padding: 15px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .round-controls .current-round {
+      font-size: 24px;
+      font-weight: bold;
+      color: #b89851;
+      margin-bottom: 10px;
+    }
+
+    .round-controls .btn-row {
+      justify-content: center;
+    }
+
+    .confirm-dialog {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1001;
+    }
+
+    .confirm-dialog .modal-content {
+      background: #fffefb;
+      max-width: 400px;
+    }
+
+    .confirm-dialog h3 {
+      color: #e74c3c;
+      margin-bottom: 15px;
+    }
+
+    #adminSetupCard, #adminSaveCard {
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px;
+      }
+      
+      h1 {
+        font-size: 24px;
+      }
+
+      .status-bar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .btn-row {
+        flex-direction: column;
+      }
+
+      .btn-row button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Login Modal -->
+  <div id="loginModal" class="modal-backdrop">
+    <div class="modal-content">
+      <h3>🔑 Login to Edit</h3>
+      <p style="color: #8b7d6b; margin-bottom: 20px;">
+        <strong>Regular Access:</strong> Edit current round scores<br>
+        <strong>Admin Access:</strong> Full tournament management
+      </p>
+      <input type="password" id="passwordInput" placeholder="Enter password" />
+      <div class="error-msg" id="passwordError"></div>
+      <div class="btn-row">
+        <button id="loginBtn" class="btn-primary">Login</button>
+        <button id="cancelLoginBtn" class="btn-secondary">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <header>
+      <h1>♟️ Insterfreestyle League</h1>
+      <p class="subtitle">Track results and see standings live</p>
+    </header>
+
+    <div class="status-bar">
+      <div class="status-item">
+        <span id="loginStatusIcon">👁️</span>
+        <span id="loginStatusText">Viewing only</span>
+      </div>
+      <button class="login-btn" id="loginStatusBtn">🔑 Login to Edit</button>
+      <div class="status-item">
+        <strong>Players:</strong> <span id="heroPlayers">0</span>
+      </div>
+      <div class="status-item">
+        <strong>Games:</strong> <span id="heroGames">0</span>
+      </div>
+      <div class="status-item">
+        <strong>Rounds:</strong> <span id="heroRounds">0</span>
+      </div>
+    </div>
+
+    <!-- Admin Setup Section -->
+    <div id="adminSetupCard" class="section">
+      <div class="admin-notice">
+        <strong>👑 Admin Controls</strong>
+        <p style="margin: 10px 0 0 0; color: #8b7d6b;">You're logged in as admin. You can manage the tournament below.</p>
+      </div>
+      
+      <h2 class="section-title">⚙️ Tournament Setup</h2>
+      
+      <label>Tournament Name</label>
+      <input id="tournamentName" placeholder="Enter tournament name" />
+
+      <label>Format</label>
+      <select id="formatType">
+        <option value="double">Double Round Robin</option>
+        <option value="single">Single Round Robin</option>
+      </select>
+
+      <div class="btn-row">
+        <button id="addPlayerBtn" class="btn-primary">➕ Add Player</button>
+        <button id="loadSampleBtn" class="btn-secondary">📋 Load Sample</button>
+      </div>
+
+      <div id="playersList" style="margin-top: 15px;"></div>
+
+      <div class="btn-row">
+        <button id="generateBtn" class="btn-primary">🎲 Generate Schedule</button>
+        <button id="resetResultsBtn" class="btn-warning">🔄 Clear Results</button>
+        <button id="newTournamentBtn" class="btn-danger">🗑️ New Tournament</button>
+      </div>
+
+      <div id="status" class="status-message" style="display: none;"></div>
+    </div>
+
+    <!-- Standings & Podium -->
+    <div class="section">
+      <h2 class="section-title">🏆 Standings</h2>
+      
+      <!-- Round Controls (Admin Only) -->
+      <div id="roundControls" class="round-controls" style="display: none;">
+        <div class="current-round">Round <span id="currentRoundDisplay">1</span> / <span id="totalRoundsDisplay">0</span></div>
+        <p style="margin: 10px 0; color: #8b7d6b;">Control which round users can edit</p>
+        <div class="btn-row">
+          <button id="prevRoundBtn" class="btn-secondary">⬅️ Previous Round</button>
+          <button id="nextRoundBtn" class="btn-primary">Next Round ➡️</button>
+        </div>
+      </div>
+
+      <div id="podium" class="podium"></div>
+
+      <div class="scroll-container">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Player</th>
+              <th class="center">Played</th>
+              <th class="center">Won</th>
+              <th class="center">Draw</th>
+              <th class="center">Lost</th>
+              <th class="center">Points</th>
+            </tr>
+          </thead>
+          <tbody id="standingsBody">
+            <tr><td colspan="7" class="empty">No standings yet</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Schedule & Results -->
+    <div class="section">
+      <h2 class="section-title">📋 Schedule & Results</h2>
+      
+      <div class="scroll-container">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 60px;">Round</th>
+              <th style="width: 90px;">Board</th>
+              <th>White</th>
+              <th>Black</th>
+              <th style="width: 150px;">Result</th>
+            </tr>
+          </thead>
+          <tbody id="gamesBody">
+            <tr><td colspan="5" class="empty">No schedule yet</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Cross Table -->
+    <div class="section">
+      <h2 class="section-title">📊 Cross Table</h2>
+      
+      <div class="scroll-container">
+        <table id="crossTable">
+          <tbody>
+            <tr><td class="empty">No cross table yet</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmation Dialog -->
+  <div id="confirmDialog" class="confirm-dialog">
+    <div class="modal-content">
+      <h3 id="confirmTitle">⚠️ Confirm Action</h3>
+      <p id="confirmMessage" style="color: #8b7d6b; margin-bottom: 20px;"></p>
+      <div class="btn-row">
+        <button id="confirmYes" class="btn-danger">Yes, Continue</button>
+        <button id="confirmNo" class="btn-secondary">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    const API_URL = '/api/tournament';
+    const PASSWORDS = {
+      regular: 'insterburg',
+      admin: 'insteradmin'
+    };
+
+    let userRole = 'viewer';
+
+    const state = {
+      tournamentName: 'Insterfreestyle League',
+      formatType: 'double',
+      players: [],
+      games: [],
+      currentRound: 1
+    };
+
+    const el = {
+      tournamentName: document.getElementById('tournamentName'),
+      formatType: document.getElementById('formatType'),
+      playersList: document.getElementById('playersList'),
+      gamesBody: document.getElementById('gamesBody'),
+      podium: document.getElementById('podium'),
+      standingsBody: document.getElementById('standingsBody'),
+      crossTable: document.getElementById('crossTable'),
+      status: document.getElementById('status'),
+      heroPlayers: document.getElementById('heroPlayers'),
+      heroGames: document.getElementById('heroGames'),
+      heroRounds: document.getElementById('heroRounds'),
+      loginModal: document.getElementById('loginModal'),
+      passwordInput: document.getElementById('passwordInput'),
+      passwordError: document.getElementById('passwordError'),
+      adminSetupCard: document.getElementById('adminSetupCard'),
+      loginStatusIcon: document.getElementById('loginStatusIcon'),
+      loginStatusText: document.getElementById('loginStatusText'),
+      loginStatusBtn: document.getElementById('loginStatusBtn'),
+      roundControls: document.getElementById('roundControls'),
+      currentRoundDisplay: document.getElementById('currentRoundDisplay'),
+      totalRoundsDisplay: document.getElementById('totalRoundsDisplay'),
+      confirmDialog: document.getElementById('confirmDialog'),
+      confirmTitle: document.getElementById('confirmTitle'),
+      confirmMessage: document.getElementById('confirmMessage'),
+      confirmYes: document.getElementById('confirmYes'),
+      confirmNo: document.getElementById('confirmNo')
+    };
+
+    function setStatus(text, type = 'ok') {
+      el.status.textContent = text;
+      el.status.style.display = 'block';
+      if (type === 'error') {
+        el.status.style.background = '#f8d7da';
+        el.status.style.color = '#721c24';
+        el.status.style.borderColor = '#f5c6cb';
+      } else if (type === 'warn') {
+        el.status.style.background = '#fff3cd';
+        el.status.style.color = '#856404';
+        el.status.style.borderColor = '#ffeaa7';
+      } else {
+        el.status.style.background = '#d4edda';
+        el.status.style.color = '#155724';
+        el.status.style.borderColor = '#c3e6cb';
+      }
+    }
+
+    function updateLoginStatus() {
+      if (userRole === 'admin') {
+        el.loginStatusIcon.textContent = '👑';
+        el.loginStatusText.textContent = 'Admin';
+        el.loginStatusBtn.textContent = '🚪 Logout';
+        el.loginStatusBtn.classList.remove('login-btn');
+        el.loginStatusBtn.classList.add('logout');
+        el.adminSetupCard.style.display = 'block';
+        el.roundControls.style.display = 'block';
+      } else if (userRole === 'regular') {
+        el.loginStatusIcon.textContent = '✏️';
+        el.loginStatusText.textContent = 'Editor';
+        el.loginStatusBtn.textContent = '🚪 Logout';
+        el.loginStatusBtn.classList.remove('login-btn');
+        el.loginStatusBtn.classList.add('logout');
+        el.adminSetupCard.style.display = 'none';
+        el.roundControls.style.display = 'none';
+      } else {
+        el.loginStatusIcon.textContent = '👁️';
+        el.loginStatusText.textContent = 'Viewing only';
+        el.loginStatusBtn.textContent = '🔑 Login to Edit';
+        el.loginStatusBtn.classList.add('login-btn');
+        el.loginStatusBtn.classList.remove('logout');
+        el.adminSetupCard.style.display = 'none';
+        el.roundControls.style.display = 'none';
+      }
+    }
+
+    let confirmCallback = null;
+
+    function showConfirm(title, message, callback) {
+      el.confirmTitle.textContent = title;
+      el.confirmMessage.textContent = message;
+      el.confirmDialog.style.display = 'flex';
+      confirmCallback = callback;
+    }
+
+    function hideConfirm() {
+      el.confirmDialog.style.display = 'none';
+      confirmCallback = null;
+    }
+
+    function showLoginModal() {
+      el.passwordInput.value = '';
+      el.passwordError.textContent = '';
+      el.loginModal.style.display = 'flex';
+      setTimeout(() => el.passwordInput.focus(), 100);
+    }
+
+    function hideLoginModal() {
+      el.loginModal.style.display = 'none';
+    }
+
+    function handleLogin() {
+      const password = el.passwordInput.value;
+      if (password === PASSWORDS.admin) {
+        userRole = 'admin';
+        hideLoginModal();
+        updateLoginStatus();
+        renderGames();
+      } else if (password === PASSWORDS.regular) {
+        userRole = 'regular';
+        hideLoginModal();
+        updateLoginStatus();
+        renderGames();
+      } else {
+        el.passwordError.textContent = 'Incorrect password. Try again.';
+      }
+    }
+
+    function handleLoginStatusBtn() {
+      if (userRole === 'viewer') {
+        showLoginModal();
+      } else {
+        userRole = 'viewer';
+        updateLoginStatus();
+        renderGames();
+      }
+    }
+
+    function initApp() {
+      updateLoginStatus();
+      loadTournament();
+    }
+
+    function uid() {
+      return 'trn-' + Math.random().toString(36).slice(2, 10);
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function syncFormToState() {
+      state.tournamentName = el.tournamentName.value.trim();
+      state.formatType = el.formatType.value;
+    }
+
+    function renderPlayers() {
+      if (!state.players.length) {
+        el.playersList.innerHTML = '<div class="empty">No players yet. Add at least 2 players.</div>';
+        return;
+      }
+
+      el.playersList.innerHTML = state.players.map((name, index) => `
+        <div class="player-item">
+          <span>${index + 1}.</span>
+          <input data-player-index="${index}" value="${escapeHtml(name)}" placeholder="Player ${index + 1}" />
+          <button class="btn-danger" data-remove-index="${index}">Remove</button>
+        </div>
+      `).join('');
+
+      [...el.playersList.querySelectorAll('input[data-player-index]')].forEach(input => {
+        input.addEventListener('input', (e) => {
+          const i = Number(e.target.dataset.playerIndex);
+          state.players[i] = e.target.value;
+          renderSummary();
+        });
+      });
+
+      [...el.playersList.querySelectorAll('button[data-remove-index]')].forEach(btn => {
+        btn.addEventListener('click', () => {
+          const i = Number(btn.dataset.removeIndex);
+          state.players.splice(i, 1);
+          renderPlayers();
+          renderSummary();
+        });
+      });
+    }
+
+    function addPlayer(name = '') {
+      state.players.push(name || `Player ${state.players.length + 1}`);
+      renderPlayers();
+      renderSummary();
+    }
+
+    function roundRobinRounds(playerNames) {
+      const list = [...playerNames];
+      const hasBye = list.length % 2 === 1;
+      if (hasBye) list.push('BYE');
+      const n = list.length;
+      const rounds = [];
+      let arr = [...list];
+
+      for (let round = 0; round < n - 1; round++) {
+        const pairings = [];
+        let byePlayer = null;
+        for (let i = 0; i < n / 2; i++) {
+          const a = arr[i];
+          const b = arr[n - 1 - i];
+          if (a === 'BYE') {
+            byePlayer = b;
+          } else if (b === 'BYE') {
+            byePlayer = a;
+          } else {
+            const white = round % 2 === 0 ? a : b;
+            const black = round % 2 === 0 ? b : a;
+            pairings.push({ white, black });
+          }
+        }
+        rounds.push({ pairings, byePlayer });
+        arr = [arr[0], arr[n - 1], ...arr.slice(1, n - 1)];
+      }
+      return rounds;
+    }
+
+    function buildSchedule(players, type = 'double') {
+      const firstLeg = roundRobinRounds(players);
+      let rounds = [...firstLeg];
+      if (type === 'double') {
+        const secondLeg = firstLeg.map(round => ({
+          pairings: round.pairings.map(g => ({ white: g.black, black: g.white })),
+          byePlayer: round.byePlayer
+        }));
+        rounds = rounds.concat(secondLeg);
+      }
+
+      const games = [];
+      rounds.forEach((round, roundIndex) => {
+        round.pairings.forEach((g, boardIndex) => {
+          games.push({
+            id: `${roundIndex + 1}-${boardIndex + 1}-${g.white}-${g.black}`,
+            round: roundIndex + 1,
+            board: boardIndex + 1,
+            white: g.white,
+            black: g.black,
+            result: '',
+            byePlayer: round.byePlayer || null
+          });
+        });
+      });
+      return games;
+    }
+
+    function generateSchedule() {
+      syncFormToState();
+      const players = state.players.map(p => p.trim()).filter(Boolean);
+      const unique = new Set(players.map(p => p.toLowerCase()));
+      if (players.length < 2) return setStatus('Add at least 2 players first.', 'error');
+      if (unique.size !== players.length) return setStatus('Player names must be unique.', 'error');
+
+      // If there are already games, confirm before overwriting
+      if (state.games.length > 0) {
+        showConfirm(
+          '⚠️ Generate New Schedule',
+          'This will create a new schedule and reset all current results. Continue?',
+          () => {
+            state.players = players;
+            state.games = buildSchedule(players, state.formatType);
+            state.currentRound = 1;
+            renderPlayers();
+            renderGames();
+            renderStandings();
+            renderCrossTable();
+            renderSummary();
+            setStatus('Schedule generated.');
+            saveTournament();
+            hideConfirm();
+          }
+        );
+      } else {
+        state.players = players;
+        state.games = buildSchedule(players, state.formatType);
+        state.currentRound = 1;
+        renderPlayers();
+        renderGames();
+        renderStandings();
+        renderCrossTable();
+        renderSummary();
+        setStatus('Schedule generated.');
+        saveTournament();
+      }
+    }
+
+    function getCurrentRound() {
+      return state.currentRound || 1;
+    }
+
+    function getTotalRounds() {
+      return Math.max(...state.games.map(g => g.round), 0);
+    }
+
+    function advanceToNextRound() {
+      const totalRounds = getTotalRounds();
+      if (state.currentRound < totalRounds) {
+        state.currentRound += 1;
+        renderGames();
+        renderSummary();
+        saveTournament();
+        setStatus(`Advanced to Round ${state.currentRound}`);
+      } else {
+        setStatus('Already at the final round', 'warn');
+      }
+    }
+
+    function goToPreviousRound() {
+      if (state.currentRound > 1) {
+        state.currentRound -= 1;
+        renderGames();
+        renderSummary();
+        saveTournament();
+        setStatus(`Moved back to Round ${state.currentRound}`);
+      } else {
+        setStatus('Already at Round 1', 'warn');
+      }
+    }
+
+    function canEditGame(game) {
+      if (userRole === 'admin') return true;
+      const currentRound = getCurrentRound();
+      return game.round === currentRound;
+    }
+
+    function renderGames() {
+      if (!state.games.length) {
+        el.gamesBody.innerHTML = '<tr><td colspan="5" class="empty">No schedule yet</td></tr>';
+        return;
+      }
+
+      const currentRound = getCurrentRound();
+      
+      // Group games by round
+      const gamesByRound = {};
+      state.games.forEach(g => {
+        if (!gamesByRound[g.round]) gamesByRound[g.round] = [];
+        gamesByRound[g.round].push(g);
+      });
+
+      let html = '';
+      Object.keys(gamesByRound).sort((a, b) => Number(a) - Number(b)).forEach(roundNum => {
+        const isCurrent = Number(roundNum) === currentRound;
+        const isFuture = Number(roundNum) > currentRound;
+        const roundGames = gamesByRound[roundNum];
+        const completedGames = roundGames.filter(g => g.result).length;
+        const totalGames = roundGames.length;
+        const byePlayer = roundGames[0]?.byePlayer;
+        
+        html += `
+          <tr class="round-header ${isCurrent ? 'current' : ''} ${isFuture ? 'future' : ''}">
+            <td colspan="5">
+              <strong>Round ${roundNum}</strong>
+              ${isCurrent ? ' <span style="color: #f39c12;">● CURRENT</span>' : ''}
+              ${isFuture ? ' <span style="color: #bbb;">○ Not Started</span>' : ''}
+              <span style="float: right; font-weight: normal;">
+                ${completedGames}/${totalGames} games completed
+              </span>
+            </td>
+          </tr>
+        `;
+
+        roundGames.forEach((g, i) => {
+          const canEdit = canEditGame(g);
+          const globalIndex = state.games.indexOf(g);
+          const isFutureRound = g.round > state.currentRound;
+          let resultCell;
+          
+          if (userRole === 'viewer') {
+            if (isFutureRound) {
+              // Future rounds - just show dash, no login prompt
+              resultCell = `<span style="color: #bbb;">-</span>`;
+            } else if (isCurrent) {
+              // Current round - show login prompt
+              resultCell = `<span style="cursor: pointer; color: #c9a961; font-weight: 500;" onclick="window.showLoginModal()" title="Login to edit">${escapeHtml(g.result || '🔑 Login to edit')}</span>`;
+            } else {
+              // Past rounds - show result only
+              resultCell = escapeHtml(g.result || '-');
+            }
+          } else if (canEdit) {
+            resultCell = `
+              <select data-game-index="${globalIndex}">
+                <option value="" ${g.result === '' ? 'selected' : ''}>-</option>
+                <option value="1-0" ${g.result === '1-0' ? 'selected' : ''}>1-0</option>
+                <option value="0.5-0.5" ${g.result === '0.5-0.5' ? 'selected' : ''}>½-½</option>
+                <option value="0-1" ${g.result === '0-1' ? 'selected' : ''}>0-1</option>
+              </select>
+            `;
+          } else {
+            resultCell = escapeHtml(g.result || '-');
+          }
+          
+          html += `
+            <tr class="round-group ${isCurrent ? 'current' : ''} ${isFuture ? 'future' : ''}">
+              <td style="color: #95a5a6;">${g.round}</td>
+              <td>Board ${g.board}</td>
+              <td>${escapeHtml(g.white)}</td>
+              <td>${escapeHtml(g.black)}</td>
+              <td>${resultCell}</td>
+            </tr>
+          `;
+        });
+
+        // Add bye player row at the end if exists
+        if (byePlayer) {
+          html += `
+            <tr class="round-group bye-row ${isCurrent ? 'current' : ''} ${isFuture ? 'future' : ''}">
+              <td style="color: #95a5a6;">${roundNum}</td>
+              <td>☕</td>
+              <td colspan="2" style="color: #2e7d32;">${escapeHtml(byePlayer)} has a bye</td>
+              <td style="color: #2e7d32;">—</td>
+            </tr>
+          `;
+        }
+      });
+
+      el.gamesBody.innerHTML = html;
+
+      [...el.gamesBody.querySelectorAll('select[data-game-index]')].forEach(select => {
+        select.addEventListener('change', (e) => {
+          const idx = Number(e.target.dataset.gameIndex);
+          state.games[idx].result = e.target.value;
+          renderStandings();
+          renderCrossTable();
+          renderSummary();
+          saveTournament();
+        });
+      });
+    }
+
+    function computeStandings() {
+      const map = new Map();
+      state.players.forEach(name => {
+        map.set(name, { name, played: 0, wins: 0, draws: 0, losses: 0, points: 0 });
+      });
+
+      for (const g of state.games) {
+        if (!g.result) continue;
+        const w = map.get(g.white);
+        const b = map.get(g.black);
+        if (!w || !b) continue;
+        w.played += 1;
+        b.played += 1;
+
+        if (g.result === '1-0') {
+          w.wins += 1;
+          b.losses += 1;
+          w.points += 1;
+        } else if (g.result === '0-1') {
+          b.wins += 1;
+          w.losses += 1;
+          b.points += 1;
+        } else if (g.result === '0.5-0.5') {
+          w.draws += 1;
+          b.draws += 1;
+          w.points += 0.5;
+          b.points += 0.5;
+        }
+      }
+
+      return [...map.values()].sort((a, b) =>
+        b.points - a.points ||
+        b.wins - a.wins ||
+        a.name.localeCompare(b.name)
+      );
+    }
+
+    function renderPodium(standings) {
+      if (!standings.length) {
+        el.podium.innerHTML = '<div class="empty">No podium yet</div>';
+        return;
+      }
+
+      const prizeLabels = ['🥇', '🥈', '🥉'];
+      const classes = ['first', 'second', 'third'];
+
+      const groups = [];
+      let currentPlace = 1;
+      let i = 0;
+      while (i < standings.length && currentPlace <= 3) {
+        const score = standings[i].points;
+        const group = [];
+        while (i < standings.length && standings[i].points === score) {
+          group.push(standings[i]);
+          i += 1;
+        }
+        groups.push({ place: currentPlace, players: group });
+        currentPlace += group.length;
+      }
+
+      el.podium.innerHTML = groups.slice(0, 3).map((group, cardIndex) => {
+        const emoji = prizeLabels[Math.min(group.place - 1, 2)] || prizeLabels[2];
+        const cls = classes[Math.min(group.place - 1, 2)] || '';
+        const names = group.players.map(p => escapeHtml(p.name)).join(' / ');
+        const pts = group.players[0].points.toFixed(1);
+        return `
+          <div class="podium-item ${cls}">
+            <div class="podium-emoji">${emoji}</div>
+            <div class="podium-name">${names}</div>
+            <div class="podium-points">${pts} points</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderStandings() {
+      const standings = computeStandings();
+      renderPodium(standings);
+      if (!standings.length) {
+        el.standingsBody.innerHTML = '<tr><td colspan="7" class="empty">No standings yet</td></tr>';
+        return;
+      }
+      el.standingsBody.innerHTML = standings.map((p, idx) => `
+        <tr>
+          <td><strong>${idx + 1}</strong></td>
+          <td>${escapeHtml(p.name)}</td>
+          <td class="center">${p.played}</td>
+          <td class="center">${p.wins}</td>
+          <td class="center">${p.draws}</td>
+          <td class="center">${p.losses}</td>
+          <td class="center"><strong>${p.points.toFixed(1)}</strong></td>
+        </tr>
+      `).join('');
+    }
+
+    function resultForPlayer(game, player) {
+      if (!game.result) return '';
+      if (game.white === player) {
+        if (game.result === '1-0') return '1';
+        if (game.result === '0.5-0.5') return '½';
+        if (game.result === '0-1') return '0';
+      }
+      if (game.black === player) {
+        if (game.result === '1-0') return '0';
+        if (game.result === '0.5-0.5') return '½';
+        if (game.result === '0-1') return '1';
+      }
+      return '';
+    }
+
+    function renderCrossTable() {
+      const players = state.players;
+      if (!players.length) {
+        el.crossTable.innerHTML = '<tbody><tr><td class="empty">No cross table yet</td></tr></tbody>';
+        return;
+      }
+      const standingsMap = new Map(computeStandings().map(p => [p.name, p]));
+      let html = '<thead><tr><th>Player</th>';
+      players.forEach((_, i) => { html += `<th class="center">${i + 1}</th>`; });
+      html += '<th class="center">Pts</th></tr></thead><tbody>';
+      players.forEach((rowPlayer, rowIndex) => {
+        html += `<tr><td><strong>${rowIndex + 1}.</strong> ${escapeHtml(rowPlayer)}</td>`;
+        players.forEach(colPlayer => {
+          if (rowPlayer === colPlayer) {
+            html += '<td class="center">—</td>';
+            return;
+          }
+          const games = state.games.filter(g =>
+            (g.white === rowPlayer && g.black === colPlayer) ||
+            (g.white === colPlayer && g.black === rowPlayer)
+          );
+          const values = games.map(g => resultForPlayer(g, rowPlayer)).filter(Boolean);
+          html += `<td class="center">${values.join(' ') || ''}</td>`;
+        });
+        const p = standingsMap.get(rowPlayer);
+        html += `<td class="center"><strong>${p ? p.points.toFixed(1) : '0.0'}</strong></td></tr>`;
+      });
+      html += '</tbody>';
+      el.crossTable.innerHTML = html;
+    }
+
+    function renderSummary() {
+      const playedGames = state.games.filter(g => g.result).length;
+      const totalGames = state.games.length;
+      const totalRounds = getTotalRounds();
+      el.heroPlayers.textContent = String(state.players.filter(Boolean).length);
+      el.heroGames.textContent = `${playedGames}/${totalGames}`;
+      el.heroRounds.textContent = String(totalRounds);
+      el.currentRoundDisplay.textContent = String(state.currentRound);
+      el.totalRoundsDisplay.textContent = String(totalRounds);
+    }
+
+    async function saveTournament() {
+      syncFormToState();
+      if (!state.games.length) return;
+
+      const payload = {
+        tournamentName: state.tournamentName || 'Insterfreestyle League',
+        formatType: state.formatType,
+        players: state.players,
+        games: state.games,
+        currentRound: state.currentRound
+      };
+
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (data.success && userRole === 'admin') {
+          setStatus(`Auto-saved at ${new Date().toLocaleTimeString()}`);
+        }
+      } catch (err) {
+        console.error(err);
+        if (userRole === 'admin') {
+          setStatus(`Save failed: ${err.message}`, 'error');
+        }
+      }
+    }
+
+    async function loadTournament() {
+      try {
+        const response = await fetch(API_URL);
+        const data = await response.json();
+        
+        if (!data || data.exists === false || !data.players) {
+          if (userRole === 'admin') {
+            setStatus('No league data found. Create a new tournament above.', 'warn');
+          }
+          return;
+        }
+        
+        state.tournamentName = data.tournamentName || 'Insterfreestyle League';
+        state.formatType = data.formatType || 'double';
+        state.players = Array.isArray(data.players) ? data.players : [];
+        state.games = Array.isArray(data.games) ? data.games : [];
+        state.currentRound = data.currentRound || 1;
+        el.tournamentName.value = state.tournamentName;
+        el.formatType.value = state.formatType;
+        renderPlayers();
+        renderGames();
+        renderStandings();
+        renderCrossTable();
+        renderSummary();
+        if (userRole === 'admin') {
+          setStatus('League loaded successfully.');
+        }
+      } catch (err) {
+        console.error(err);
+        if (userRole === 'admin') {
+          setStatus(`Load failed: ${err.message}`, 'error');
+        }
+      }
+    }
+
+    function clearResults() {
+      showConfirm(
+        '⚠️ Clear All Results',
+        'Are you sure you want to clear all game results? This action cannot be undone.',
+        () => {
+          state.games = state.games.map(g => ({ ...g, result: '' }));
+          state.currentRound = 1;
+          renderGames();
+          renderStandings();
+          renderCrossTable();
+          renderSummary();
+          setStatus('All results cleared.', 'warn');
+          saveTournament();
+          hideConfirm();
+        }
+      );
+    }
+
+    function resetTournament() {
+      showConfirm(
+        '⚠️ New Tournament',
+        'Are you sure you want to create a new empty tournament? All current data will be lost. This action cannot be undone.',
+        () => {
+          state.tournamentName = 'Insterfreestyle League';
+          state.formatType = 'double';
+          state.players = [];
+          state.games = [];
+          state.currentRound = 1;
+          el.tournamentName.value = state.tournamentName;
+          el.formatType.value = 'double';
+          renderPlayers();
+          renderGames();
+          renderStandings();
+          renderCrossTable();
+          renderSummary();
+          setStatus('New empty tournament created.', 'warn');
+          hideConfirm();
+        }
+      );
+    }
+
+    window.showLoginModal = showLoginModal;
+
+    el.loginStatusBtn.addEventListener('click', handleLoginStatusBtn);
+    document.getElementById('loginBtn').addEventListener('click', handleLogin);
+    document.getElementById('cancelLoginBtn').addEventListener('click', hideLoginModal);
+    el.passwordInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleLogin();
+    });
+    
+    document.getElementById('prevRoundBtn').addEventListener('click', goToPreviousRound);
+    document.getElementById('nextRoundBtn').addEventListener('click', advanceToNextRound);
+    
+    el.confirmYes.addEventListener('click', () => {
+      if (confirmCallback) confirmCallback();
+    });
+    el.confirmNo.addEventListener('click', hideConfirm);
+    
+    document.getElementById('addPlayerBtn').addEventListener('click', () => addPlayer(''));
+    document.getElementById('loadSampleBtn').addEventListener('click', () => {
+      state.players = ['Dalma', 'Stone', 'Denisa', 'Mihai'];
+      renderPlayers();
+      renderSummary();
+      setStatus('Sample names loaded.');
+    });
+    document.getElementById('generateBtn').addEventListener('click', generateSchedule);
+    document.getElementById('resetResultsBtn').addEventListener('click', clearResults);
+    document.getElementById('newTournamentBtn').addEventListener('click', resetTournament);
+    el.tournamentName.addEventListener('input', syncFormToState);
+    el.formatType.addEventListener('change', syncFormToState);
+
+    initApp();
+  </script>
+</body>
+</html>
