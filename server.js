@@ -5,11 +5,18 @@ const cors = require('cors');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const BASE_PATH = process.env.BASE_PATH || '';  // Set to '/insterleague' if needed
 const DATA_FILE = path.join(__dirname, 'tournament-data.json');
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(__dirname));
+
+// Serve static files with base path support
+if (BASE_PATH) {
+  app.use(BASE_PATH, express.static(__dirname));
+} else {
+  app.use(express.static(__dirname));
+}
 
 async function readData() {
   try {
@@ -24,7 +31,9 @@ async function writeData(data) {
   await fs.writeFile(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
 }
 
-app.get('/api/tournament', async (req, res) => {
+const apiPath = BASE_PATH ? `${BASE_PATH}/api/tournament` : '/api/tournament';
+
+app.get(apiPath, async (req, res) => {
   try {
     const data = await readData();
     res.json(data || { exists: false });
@@ -33,7 +42,7 @@ app.get('/api/tournament', async (req, res) => {
   }
 });
 
-app.post('/api/tournament', async (req, res) => {
+app.post(apiPath, async (req, res) => {
   try {
     const data = req.body;
     data.updatedAt = new Date().toISOString();
@@ -45,5 +54,5 @@ app.post('/api/tournament', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Insterleague server running on port ${PORT}`);
+  console.log(`Insterleague server running on port ${PORT}${BASE_PATH ? ` with base path: ${BASE_PATH}` : ''}`);
 });

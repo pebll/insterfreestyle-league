@@ -619,7 +619,8 @@
   </div>
 
   <script type="module">
-    const API_URL = '/api/tournament';
+    const BASE_PATH = window.location.pathname.match(/^(\/[^\/]+)/)?.[1] || '';
+    const API_URL = `${BASE_PATH}/api/tournament`;
     const PASSWORDS = {
       regular: 'insterburg',
       admin: 'insteradmin'
