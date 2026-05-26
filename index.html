@@ -465,7 +465,7 @@
     <div class="modal-content">
       <h3>🔑 Login to Edit</h3>
       <p style="color: #8b7d6b; margin-bottom: 20px;">
-        <strong>Regular Access:</strong> Edit current round scores<br>
+        <strong>Regular Access:</strong> Edit unfilled scores (current & past rounds)<br>
         <strong>Admin Access:</strong> Full tournament management
       </p>
       <input type="password" id="passwordInput" placeholder="Enter password" />
@@ -527,6 +527,8 @@
 
       <div class="btn-row">
         <button id="generateBtn" class="btn-primary">🎲 Generate Schedule</button>
+        <button id="exportBtn" class="btn-secondary">⬇️ Export Data</button>
+        <button id="importBtn" class="btn-secondary">⬆️ Import Data</button>
         <button id="resetResultsBtn" class="btn-warning">🔄 Clear Results</button>
         <button id="newTournamentBtn" class="btn-danger">🗑️ New Tournament</button>
       </div>
@@ -957,8 +959,9 @@
 
     function canEditGame(game) {
       if (userRole === 'admin') return true;
+      if (userRole === 'viewer') return false;
       const currentRound = getCurrentRound();
-      return game.round === currentRound;
+      return game.round <= currentRound && !game.result;
     }
 
     function renderGames() {
@@ -1006,14 +1009,11 @@
           
           if (userRole === 'viewer') {
             if (isFutureRound) {
-              // Future rounds - just show dash, no login prompt
               resultCell = `<span style="color: #bbb;">-</span>`;
-            } else if (isCurrent) {
-              // Current round - show login prompt
+            } else if (!g.result) {
               resultCell = `<span style="cursor: pointer; color: #c9a961; font-weight: 500;" onclick="window.showLoginModal()" title="Login to edit">${escapeHtml(g.result || '🔑 Login to edit')}</span>`;
             } else {
-              // Past rounds - show result only
-              resultCell = escapeHtml(g.result || '-');
+              resultCell = escapeHtml(g.result);
             }
           } else if (canEdit) {
             resultCell = `
@@ -1324,6 +1324,78 @@
       );
     }
 
+    function exportTournament() {
+      syncFormToState();
+      const data = {
+        tournamentName: state.tournamentName,
+        formatType: state.formatType,
+        players: state.players,
+        games: state.games,
+        currentRound: state.currentRound,
+        exportDate: new Date().toISOString()
+      };
+      
+      const json = JSON.stringify(data, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `tournament-${state.tournamentName.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setStatus('Tournament data exported!');
+    }
+
+    function importTournament() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const data = JSON.parse(event.target.result);
+            
+            if (!data.players || !data.games) {
+              setStatus('Invalid tournament file format', 'error');
+              return;
+            }
+            
+            showConfirm(
+              '⚠️ Import Tournament',
+              'This will replace all current data with the imported tournament. Continue?',
+              () => {
+                state.tournamentName = data.tournamentName || 'Imported Tournament';
+                state.formatType = data.formatType || 'double';
+                state.players = data.players;
+                state.games = data.games;
+                state.currentRound = data.currentRound || 1;
+                
+                el.tournamentName.value = state.tournamentName;
+                el.formatType.value = state.formatType;
+                
+                renderPlayers();
+                renderGames();
+                renderStandings();
+                renderCrossTable();
+                renderSummary();
+                saveTournament();
+                setStatus('Tournament imported successfully!');
+                hideConfirm();
+              }
+            );
+          } catch (err) {
+            setStatus(`Import failed: ${err.message}`, 'error');
+          }
+        };
+        reader.readAsText(file);
+      };
+      input.click();
+    }
+
     window.showLoginModal = showLoginModal;
 
     el.loginStatusBtn.addEventListener('click', handleLoginStatusBtn);
@@ -1349,6 +1421,8 @@
       setStatus('Sample names loaded.');
     });
     document.getElementById('generateBtn').addEventListener('click', generateSchedule);
+    document.getElementById('exportBtn').addEventListener('click', exportTournament);
+    document.getElementById('importBtn').addEventListener('click', importTournament);
     document.getElementById('resetResultsBtn').addEventListener('click', clearResults);
     document.getElementById('newTournamentBtn').addEventListener('click', resetTournament);
     el.tournamentName.addEventListener('input', syncFormToState);

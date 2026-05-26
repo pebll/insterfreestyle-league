@@ -6,8 +6,9 @@ Local tournament management system with password-protected editing.
 
 - **Public viewing**: Anyone can see standings and schedules
 - **Password-protected editing**:
-  - Regular users (`insterburg`): Edit current round scores only
-  - Admin (`insteradmin`): Full control - create tournaments, edit any scores
+  - Regular users (`insterburg`): Edit unfilled scores from current and past rounds
+  - Admin (`insteradmin`): Full control - create tournaments, edit any scores, manage rounds
+- **Export/Import**: Backup and restore tournament data as JSON files
 - **Local storage**: All data stored in local JSON file on your server
 - **Auto-save**: Changes persist automatically
 
@@ -117,8 +118,8 @@ docker exec caddy caddy reload --config /etc/caddy/Caddyfile
 ## Passwords
 
 - **View only**: No password needed (public)
-- **Edit scores** (current round): `insterburg`
-- **Admin** (full control): `insteradmin`
+- **Edit scores** (unfilled from current & past rounds): `insterburg`
+- **Admin** (full control + export/import): `insteradmin`
 
 Change these in `index.html` lines with `PASSWORDS` object.
 
@@ -127,3 +128,10 @@ Change these in `index.html` lines with `PASSWORDS` object.
 All tournament data is stored in `tournament-data.json`. Make sure to:
 - Keep this file backed up
 - Mount it as a volume in Docker to persist data across container restarts
+
+### Export/Import Feature
+
+Admins can export and import tournament data:
+- **Export**: Downloads current tournament as a JSON file with timestamp
+- **Import**: Upload a previously exported JSON file to restore tournament data
+- Use cases: Backups, sharing tournaments, migrating between servers
