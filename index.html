@@ -322,13 +322,64 @@
       overflow-y: auto;
     }
 
+    .season-banner {
+      text-align: center;
+      margin-bottom: 24px;
+      padding: 16px 20px;
+      background: linear-gradient(135deg, #faf8ef 0%, #f5f1e8 100%);
+      border: 1px solid #e8e4db;
+      border-radius: 8px;
+    }
+
+    .season-banner h2 {
+      font-size: 22px;
+      color: #3d3226;
+      margin-bottom: 8px;
+    }
+
+    .season-banner .season-meta {
+      color: #8b7d6b;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    .season-selector {
+      max-width: 320px;
+      margin: 0 auto;
+    }
+
+    .archive-notice {
+      background: #fff3cd;
+      border: 2px solid #f39c12;
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      text-align: center;
+      color: #856404;
+      font-weight: 500;
+    }
+
+    #scheduleScroll thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: #f5f1e8;
+    }
+
+    #scheduleScroll .round-header {
+      scroll-margin-top: 48px;
+    }
+
     .round-header {
       background: #f5f1e8;
       font-weight: bold;
-      padding: 12px;
       color: #3d3226;
       border-top: 2px solid #c9a961;
       border-bottom: 2px solid #c9a961;
+    }
+
+    .round-header td {
+      padding: 12px;
     }
 
     .round-header.current {
@@ -483,6 +534,18 @@
       <p class="subtitle">Track results and see standings live</p>
     </header>
 
+    <div id="archiveNotice" class="archive-notice" style="display: none;">
+      📁 Viewing archived season — read only
+    </div>
+
+    <div class="season-banner">
+      <h2 id="seasonTitle">Season 1</h2>
+      <p class="season-meta" id="seasonMeta"></p>
+      <select id="seasonSelect" class="season-selector">
+        <option value="live">🔴 Current Season</option>
+      </select>
+    </div>
+
     <div class="status-bar">
       <div class="status-item">
         <span id="loginStatusIcon">👁️</span>
@@ -512,6 +575,9 @@
       <label>Tournament Name</label>
       <input id="tournamentName" placeholder="Enter tournament name" />
 
+      <label>Season Name</label>
+      <input id="seasonName" placeholder="e.g. Season 1" />
+
       <label>Format</label>
       <select id="formatType">
         <option value="double">Double Round Robin</option>
@@ -530,6 +596,9 @@
         <button id="exportBtn" class="btn-secondary">⬇️ Export Data</button>
         <button id="importBtn" class="btn-secondary">⬆️ Import Data</button>
         <button id="resetResultsBtn" class="btn-warning">🔄 Clear Results</button>
+        <button id="archiveSeasonBtn" class="btn-secondary">📦 Archive Season</button>
+        <button id="importArchiveBtn" class="btn-secondary">⬆️ Import Past Season</button>
+        <button id="startNewSeasonBtn" class="btn-warning">🆕 Start New Season</button>
         <button id="newTournamentBtn" class="btn-danger">🗑️ New Tournament</button>
       </div>
 
@@ -552,7 +621,7 @@
 
       <div id="podium" class="podium"></div>
 
-      <div class="scroll-container">
+      <div id="standingsScroll">
         <table>
           <thead>
             <tr>
@@ -576,7 +645,7 @@
     <div class="section">
       <h2 class="section-title">📋 Schedule & Results</h2>
       
-      <div class="scroll-container">
+      <div class="scroll-container" id="scheduleScroll">
         <table>
           <thead>
             <tr>
@@ -598,7 +667,7 @@
     <div class="section">
       <h2 class="section-title">📊 Cross Table</h2>
       
-      <div class="scroll-container">
+      <div id="crossTableScroll">
         <table id="crossTable">
           <tbody>
             <tr><td class="empty">No cross table yet</td></tr>
@@ -623,15 +692,21 @@
   <script type="module">
     const BASE_PATH = window.location.pathname.match(/^(\/[^\/]+)/)?.[1] || '';
     const API_URL = `${BASE_PATH}/api/tournament`;
+    const SEASONS_URL = `${BASE_PATH}/api/seasons`;
     const PASSWORDS = {
       regular: 'insterburg',
       admin: 'insteradmin'
     };
 
     let userRole = 'viewer';
+    let authPassword = null;
+    let serverUpdatedAt = null;
+    let viewingArchiveId = null;
+    let archivedSeasons = [];
 
     const state = {
       tournamentName: 'Insterfreestyle League',
+      seasonName: 'Season 1',
       formatType: 'double',
       players: [],
       games: [],
@@ -640,9 +715,13 @@
 
     const el = {
       tournamentName: document.getElementById('tournamentName'),
+      seasonName: document.getElementById('seasonName'),
       formatType: document.getElementById('formatType'),
       playersList: document.getElementById('playersList'),
       gamesBody: document.getElementById('gamesBody'),
+      scheduleScroll: document.getElementById('scheduleScroll'),
+      standingsScroll: document.getElementById('standingsScroll'),
+      crossTableScroll: document.getElementById('crossTableScroll'),
       podium: document.getElementById('podium'),
       standingsBody: document.getElementById('standingsBody'),
       crossTable: document.getElementById('crossTable'),
@@ -650,6 +729,10 @@
       heroPlayers: document.getElementById('heroPlayers'),
       heroGames: document.getElementById('heroGames'),
       heroRounds: document.getElementById('heroRounds'),
+      seasonTitle: document.getElementById('seasonTitle'),
+      seasonMeta: document.getElementById('seasonMeta'),
+      seasonSelect: document.getElementById('seasonSelect'),
+      archiveNotice: document.getElementById('archiveNotice'),
       loginModal: document.getElementById('loginModal'),
       passwordInput: document.getElementById('passwordInput'),
       passwordError: document.getElementById('passwordError'),
@@ -666,6 +749,127 @@
       confirmYes: document.getElementById('confirmYes'),
       confirmNo: document.getElementById('confirmNo')
     };
+
+    function expectedRounds(playerCount, formatType) {
+      if (playerCount < 2) return 0;
+      const base = playerCount % 2 === 0 ? playerCount - 1 : playerCount;
+      return formatType === 'double' ? base * 2 : base;
+    }
+
+    function authHeaders() {
+      const headers = { 'Content-Type': 'application/json' };
+      if (authPassword) {
+        headers['X-Insterleague-Password'] = authPassword;
+      }
+      return headers;
+    }
+
+    function isReadOnlyView() {
+      return viewingArchiveId !== null;
+    }
+
+    function applyScrollContainers() {
+      const playerCount = state.players.filter(Boolean).length;
+      const needsScroll = playerCount >= 12;
+      el.standingsScroll.classList.toggle('scroll-container', needsScroll);
+      el.crossTableScroll.classList.toggle('scroll-container', needsScroll);
+    }
+
+    function scrollScheduleToCurrentRound() {
+      const container = el.scheduleScroll;
+      const target = document.getElementById(`round-header-${state.currentRound}`);
+      if (!container || !target) return;
+
+      const header = container.querySelector('thead');
+      const headerHeight = header ? header.getBoundingClientRect().height : 0;
+      const containerTop = container.getBoundingClientRect().top;
+      const targetTop = target.getBoundingClientRect().top;
+      const nextScrollTop = container.scrollTop + (targetTop - containerTop) - headerHeight - 4;
+
+      container.scrollTop = Math.max(0, nextScrollTop);
+    }
+
+    function scheduleScrollToCurrentRound() {
+      const run = () => scrollScheduleToCurrentRound();
+      requestAnimationFrame(() => {
+        requestAnimationFrame(run);
+      });
+      setTimeout(run, 100);
+    }
+
+    function updateSeasonDisplay() {
+      el.seasonTitle.textContent = state.seasonName || state.tournamentName || 'Current Season';
+      const round = state.currentRound || 1;
+      const total = getTotalRounds();
+      el.seasonMeta.textContent = state.players.length
+        ? `${state.tournamentName} · Round ${round}/${total} · ${state.formatType === 'double' ? 'Double' : 'Single'} RR`
+        : 'No active schedule';
+      el.archiveNotice.style.display = isReadOnlyView() ? 'block' : 'none';
+    }
+
+    async function loadSeasonsList() {
+      try {
+        const response = await fetch(SEASONS_URL);
+        archivedSeasons = await response.json();
+        renderSeasonSelect();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function renderSeasonSelect() {
+      const current = el.seasonSelect.value;
+      el.seasonSelect.innerHTML = '<option value="live">🔴 Current Season</option>';
+      archivedSeasons.forEach(season => {
+        const opt = document.createElement('option');
+        opt.value = season.id;
+        opt.textContent = `📁 ${season.seasonName} (${new Date(season.archivedAt).toLocaleDateString()})`;
+        el.seasonSelect.appendChild(opt);
+      });
+      el.seasonSelect.value = viewingArchiveId || current || 'live';
+    }
+
+    async function viewSeason(seasonId) {
+      if (seasonId === 'live') {
+        viewingArchiveId = null;
+        updateLoginStatus();
+        await loadTournament();
+        return;
+      }
+      try {
+        const response = await fetch(`${SEASONS_URL}/${seasonId}`);
+        if (!response.ok) throw new Error('Season not found');
+        const data = await response.json();
+        viewingArchiveId = seasonId;
+        applyLoadedData(data);
+        renderSeasonSelect();
+        updateLoginStatus();
+        setStatus(`Viewing archived season: ${data.seasonName || data.tournamentName}`, 'warn');
+      } catch (err) {
+        setStatus(`Failed to load season: ${err.message}`, 'error');
+        el.seasonSelect.value = 'live';
+      }
+    }
+
+    function applyLoadedData(data) {
+      state.tournamentName = data.tournamentName || 'Insterfreestyle League';
+      state.seasonName = data.seasonName || data.tournamentName || 'Season 1';
+      state.formatType = data.formatType || 'double';
+      state.players = Array.isArray(data.players) ? data.players : [];
+      state.games = Array.isArray(data.games) ? data.games : [];
+      state.currentRound = data.currentRound || 1;
+      serverUpdatedAt = data.updatedAt || null;
+      el.tournamentName.value = state.tournamentName;
+      el.seasonName.value = state.seasonName;
+      el.formatType.value = state.formatType;
+      renderPlayers();
+      renderGames();
+      renderStandings();
+      renderCrossTable();
+      renderSummary();
+      updateSeasonDisplay();
+      applyScrollContainers();
+    }
 
     function setStatus(text, type = 'ok') {
       el.status.textContent = text;
@@ -686,14 +890,15 @@
     }
 
     function updateLoginStatus() {
+      const showAdmin = userRole === 'admin' && !isReadOnlyView();
       if (userRole === 'admin') {
         el.loginStatusIcon.textContent = '👑';
-        el.loginStatusText.textContent = 'Admin';
+        el.loginStatusText.textContent = isReadOnlyView() ? 'Admin (viewing archive)' : 'Admin';
         el.loginStatusBtn.textContent = '🚪 Logout';
         el.loginStatusBtn.classList.remove('login-btn');
         el.loginStatusBtn.classList.add('logout');
-        el.adminSetupCard.style.display = 'block';
-        el.roundControls.style.display = 'block';
+        el.adminSetupCard.style.display = showAdmin ? 'block' : 'none';
+        el.roundControls.style.display = showAdmin ? 'block' : 'none';
       } else if (userRole === 'regular') {
         el.loginStatusIcon.textContent = '✏️';
         el.loginStatusText.textContent = 'Editor';
@@ -742,11 +947,13 @@
       const password = el.passwordInput.value;
       if (password === PASSWORDS.admin) {
         userRole = 'admin';
+        authPassword = password;
         hideLoginModal();
         updateLoginStatus();
         renderGames();
       } else if (password === PASSWORDS.regular) {
         userRole = 'regular';
+        authPassword = password;
         hideLoginModal();
         updateLoginStatus();
         renderGames();
@@ -760,6 +967,7 @@
         showLoginModal();
       } else {
         userRole = 'viewer';
+        authPassword = null;
         updateLoginStatus();
         renderGames();
       }
@@ -767,6 +975,7 @@
 
     function initApp() {
       updateLoginStatus();
+      loadSeasonsList();
       loadTournament();
     }
 
@@ -785,6 +994,7 @@
 
     function syncFormToState() {
       state.tournamentName = el.tournamentName.value.trim();
+      state.seasonName = el.seasonName.value.trim() || state.tournamentName;
       state.formatType = el.formatType.value;
     }
 
@@ -929,28 +1139,48 @@
     }
 
     function getTotalRounds() {
-      return Math.max(...state.games.map(g => g.round), 0);
+      const fromSchedule = expectedRounds(state.players.length, state.formatType);
+      return fromSchedule || Math.max(...state.games.map(g => g.round), 0);
     }
 
-    function advanceToNextRound() {
+    async function patchCurrentRound(newRound) {
+      const response = await fetch(`${API_URL}/current-round`, {
+        method: 'PATCH',
+        headers: authHeaders(),
+        body: JSON.stringify({ currentRound: newRound, expectedUpdatedAt: serverUpdatedAt })
+      });
+      const data = await response.json();
+      if (response.status === 409) {
+        await handleConflict(data);
+        return false;
+      }
+      if (!response.ok) throw new Error(data.error || 'Failed to update round');
+      serverUpdatedAt = data.updatedAt;
+      state.currentRound = data.currentRound;
+      return true;
+    }
+
+    async function advanceToNextRound() {
       const totalRounds = getTotalRounds();
       if (state.currentRound < totalRounds) {
-        state.currentRound += 1;
+        const ok = await patchCurrentRound(state.currentRound + 1);
+        if (!ok) return;
         renderGames();
         renderSummary();
-        saveTournament();
+        updateSeasonDisplay();
         setStatus(`Advanced to Round ${state.currentRound}`);
       } else {
         setStatus('Already at the final round', 'warn');
       }
     }
 
-    function goToPreviousRound() {
+    async function goToPreviousRound() {
       if (state.currentRound > 1) {
-        state.currentRound -= 1;
+        const ok = await patchCurrentRound(state.currentRound - 1);
+        if (!ok) return;
         renderGames();
         renderSummary();
-        saveTournament();
+        updateSeasonDisplay();
         setStatus(`Moved back to Round ${state.currentRound}`);
       } else {
         setStatus('Already at Round 1', 'warn');
@@ -958,6 +1188,7 @@
     }
 
     function canEditGame(game) {
+      if (isReadOnlyView()) return false;
       if (userRole === 'admin') return true;
       if (userRole === 'viewer') return false;
       const currentRound = getCurrentRound();
@@ -990,7 +1221,7 @@
         
         html += `
           <tr class="round-header ${isCurrent ? 'current' : ''} ${isFuture ? 'future' : ''}">
-            <td colspan="5">
+            <td id="round-header-${roundNum}" colspan="5">
               <strong>Round ${roundNum}</strong>
               ${isCurrent ? ' <span style="color: #f39c12;">● CURRENT</span>' : ''}
               ${isFuture ? ' <span style="color: #bbb;">○ Not Started</span>' : ''}
@@ -1003,21 +1234,31 @@
 
         roundGames.forEach((g, i) => {
           const canEdit = canEditGame(g);
-          const globalIndex = state.games.indexOf(g);
           const isFutureRound = g.round > state.currentRound;
           let resultCell;
           
-          if (userRole === 'viewer') {
+          if (userRole === 'viewer' || isReadOnlyView()) {
             if (isFutureRound) {
               resultCell = `<span style="color: #bbb;">-</span>`;
             } else if (!g.result) {
-              resultCell = `<span style="cursor: pointer; color: #c9a961; font-weight: 500;" onclick="window.showLoginModal()" title="Login to edit">${escapeHtml(g.result || '🔑 Login to edit')}</span>`;
+              resultCell = isReadOnlyView()
+                ? '<span style="color: #bbb;">-</span>'
+                : `<span style="cursor: pointer; color: #c9a961; font-weight: 500;" onclick="window.showLoginModal()" title="Login to edit">${escapeHtml(g.result || '🔑 Login to edit')}</span>`;
             } else {
               resultCell = escapeHtml(g.result);
             }
           } else if (canEdit) {
             resultCell = `
-              <select data-game-index="${globalIndex}">
+              <select data-game-id="${escapeHtml(g.id)}">
+                <option value="" ${g.result === '' ? 'selected' : ''}>-</option>
+                <option value="1-0" ${g.result === '1-0' ? 'selected' : ''}>1-0</option>
+                <option value="0.5-0.5" ${g.result === '0.5-0.5' ? 'selected' : ''}>½-½</option>
+                <option value="0-1" ${g.result === '0-1' ? 'selected' : ''}>0-1</option>
+              </select>
+            `;
+          } else if (userRole === 'admin') {
+            resultCell = `
+              <select data-game-id="${escapeHtml(g.id)}">
                 <option value="" ${g.result === '' ? 'selected' : ''}>-</option>
                 <option value="1-0" ${g.result === '1-0' ? 'selected' : ''}>1-0</option>
                 <option value="0.5-0.5" ${g.result === '0.5-0.5' ? 'selected' : ''}>½-½</option>
@@ -1054,16 +1295,28 @@
 
       el.gamesBody.innerHTML = html;
 
-      [...el.gamesBody.querySelectorAll('select[data-game-index]')].forEach(select => {
-        select.addEventListener('change', (e) => {
-          const idx = Number(e.target.dataset.gameIndex);
-          state.games[idx].result = e.target.value;
+      [...el.gamesBody.querySelectorAll('select[data-game-id]')].forEach(select => {
+        select.addEventListener('change', async (e) => {
+          const gameId = e.target.dataset.gameId;
+          const game = state.games.find(g => g.id === gameId);
+          if (!game) return;
+          const previous = game.result;
+          game.result = e.target.value;
           renderStandings();
           renderCrossTable();
           renderSummary();
-          saveTournament();
+          const ok = await patchGameResult(gameId, e.target.value);
+          if (!ok) {
+            game.result = previous;
+            renderGames();
+            renderStandings();
+            renderCrossTable();
+            renderSummary();
+          }
         });
       });
+
+      scheduleScrollToCurrentRound();
     }
 
     function computeStandings() {
@@ -1216,35 +1469,90 @@
       el.heroRounds.textContent = String(totalRounds);
       el.currentRoundDisplay.textContent = String(state.currentRound);
       el.totalRoundsDisplay.textContent = String(totalRounds);
+      updateSeasonDisplay();
+      applyScrollContainers();
     }
 
-    async function saveTournament() {
+    async function handleConflict(data) {
+      setStatus('Someone else updated the tournament. Reloading latest data…', 'warn');
+      if (viewingArchiveId) return false;
+      await loadTournament();
+      return false;
+    }
+
+    async function patchGameResult(gameId, result) {
+      if (isReadOnlyView()) return false;
+      if (!authPassword) {
+        setStatus('Login required to save scores.', 'error');
+        return false;
+      }
+      try {
+        const response = await fetch(`${API_URL}/games/${encodeURIComponent(gameId)}`, {
+          method: 'PATCH',
+          headers: authHeaders(),
+          body: JSON.stringify({ result, expectedUpdatedAt: serverUpdatedAt })
+        });
+        const data = await response.json();
+        if (response.status === 409) {
+          return handleConflict(data);
+        }
+        if (!response.ok) {
+          throw new Error(data.error || 'Save failed');
+        }
+        serverUpdatedAt = data.updatedAt;
+        const game = state.games.find(g => g.id === gameId);
+        if (game && data.game) game.result = data.game.result;
+        return true;
+      } catch (err) {
+        console.error(err);
+        setStatus(`Save failed: ${err.message}`, 'error');
+        return false;
+      }
+    }
+
+    async function saveTournament({ newSeason = false } = {}) {
+      if (isReadOnlyView()) return;
       syncFormToState();
-      if (!state.games.length) return;
+      if (userRole !== 'admin') {
+        setStatus('Admin login required for full save.', 'error');
+        return;
+      }
+      if (!authPassword) {
+        setStatus('Admin login required.', 'error');
+        return;
+      }
 
       const payload = {
         tournamentName: state.tournamentName || 'Insterfreestyle League',
+        seasonName: state.seasonName || state.tournamentName,
         formatType: state.formatType,
         players: state.players,
         games: state.games,
-        currentRound: state.currentRound
+        currentRound: state.currentRound,
+        expectedUpdatedAt: serverUpdatedAt,
+        newSeason
       };
 
       try {
         const response = await fetch(API_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authHeaders(),
           body: JSON.stringify(payload)
         });
         const data = await response.json();
-        if (data.success && userRole === 'admin') {
-          setStatus(`Auto-saved at ${new Date().toLocaleTimeString()}`);
+        if (response.status === 409) {
+          await handleConflict(data);
+          return;
         }
+        if (!response.ok) {
+          const details = data.details ? `: ${data.details.join('; ')}` : '';
+          throw new Error((data.error || 'Save failed') + details);
+        }
+        serverUpdatedAt = data.updatedAt;
+        setStatus(`Saved at ${new Date().toLocaleTimeString()}`);
       } catch (err) {
         console.error(err);
-        if (userRole === 'admin') {
-          setStatus(`Save failed: ${err.message}`, 'error');
-        }
+        setStatus(`Save failed: ${err.message}`, 'error');
       }
     }
 
@@ -1257,21 +1565,13 @@
           if (userRole === 'admin') {
             setStatus('No league data found. Create a new tournament above.', 'warn');
           }
+          updateSeasonDisplay();
           return;
         }
-        
-        state.tournamentName = data.tournamentName || 'Insterfreestyle League';
-        state.formatType = data.formatType || 'double';
-        state.players = Array.isArray(data.players) ? data.players : [];
-        state.games = Array.isArray(data.games) ? data.games : [];
-        state.currentRound = data.currentRound || 1;
-        el.tournamentName.value = state.tournamentName;
-        el.formatType.value = state.formatType;
-        renderPlayers();
-        renderGames();
-        renderStandings();
-        renderCrossTable();
-        renderSummary();
+
+        viewingArchiveId = null;
+        applyLoadedData(data);
+        renderSeasonSelect();
         if (userRole === 'admin') {
           setStatus('League loaded successfully.');
         }
@@ -1307,11 +1607,13 @@
         'Are you sure you want to create a new empty tournament? All current data will be lost. This action cannot be undone.',
         () => {
           state.tournamentName = 'Insterfreestyle League';
+          state.seasonName = 'Season 1';
           state.formatType = 'double';
           state.players = [];
           state.games = [];
           state.currentRound = 1;
           el.tournamentName.value = state.tournamentName;
+          el.seasonName.value = state.seasonName;
           el.formatType.value = 'double';
           renderPlayers();
           renderGames();
@@ -1324,10 +1626,122 @@
       );
     }
 
+    async function archiveCurrentSeason() {
+      if (!authPassword || userRole !== 'admin') {
+        setStatus('Admin login required.', 'error');
+        return;
+      }
+      showConfirm(
+        '📦 Archive Season',
+        `Archive "${state.seasonName}" to past seasons? The current season stays active and editable.`,
+        async () => {
+          hideConfirm();
+          try {
+            const response = await fetch(`${SEASONS_URL}/archive`, {
+              method: 'POST',
+              headers: authHeaders(),
+              body: JSON.stringify({})
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Archive failed');
+            await loadSeasonsList();
+            setStatus(`Archived: ${data.archivedSeason.seasonName}`);
+          } catch (err) {
+            setStatus(`Archive failed: ${err.message}`, 'error');
+          }
+        }
+      );
+    }
+
+    function importArchiveToLibrary() {
+      if (!authPassword || userRole !== 'admin') {
+        setStatus('Admin login required.', 'error');
+        return;
+      }
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+          try {
+            const data = JSON.parse(event.target.result);
+            if (!data.players || !data.games) {
+              setStatus('Invalid season file format', 'error');
+              return;
+            }
+            const response = await fetch(`${SEASONS_URL}/import`, {
+              method: 'POST',
+              headers: authHeaders(),
+              body: JSON.stringify(data)
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Import failed');
+            await loadSeasonsList();
+            setStatus(`Past season imported: ${result.archivedSeason.seasonName}`);
+          } catch (err) {
+            setStatus(`Import failed: ${err.message}`, 'error');
+          }
+        };
+        reader.readAsText(file);
+      };
+      input.click();
+    }
+
+    function startNewSeason() {
+      if (!authPassword || userRole !== 'admin') {
+        setStatus('Admin login required.', 'error');
+        return;
+      }
+      showConfirm(
+        '🆕 Start New Season',
+        'Archive the current season and start a fresh empty one? You can set the new season name after confirming.',
+        async () => {
+          hideConfirm();
+          try {
+            if (state.players.length && state.games.length) {
+              const archiveResp = await fetch(`${SEASONS_URL}/archive`, {
+                method: 'POST',
+                headers: authHeaders(),
+                body: JSON.stringify({})
+              });
+              if (!archiveResp.ok) {
+                const err = await archiveResp.json();
+                throw new Error(err.error || 'Could not archive current season');
+              }
+            }
+            const nextName = prompt('New season name:', 'Season 2') || 'Season 2';
+            state.tournamentName = `Insterfreestyle League - ${nextName}`;
+            state.seasonName = nextName;
+            state.players = [];
+            state.games = [];
+            state.currentRound = 1;
+            el.tournamentName.value = state.tournamentName;
+            el.seasonName.value = state.seasonName;
+            renderPlayers();
+            renderGames();
+            renderStandings();
+            renderCrossTable();
+            renderSummary();
+            await saveTournament({ newSeason: true });
+            await loadSeasonsList();
+            el.seasonSelect.value = 'live';
+            viewingArchiveId = null;
+            setStatus(`Started ${nextName}. Add players and generate a schedule.`);
+          } catch (err) {
+            setStatus(`Start new season failed: ${err.message}`, 'error');
+          }
+        }
+      );
+    }
+
     function exportTournament() {
       syncFormToState();
       const data = {
         tournamentName: state.tournamentName,
+        seasonName: state.seasonName,
         formatType: state.formatType,
         players: state.players,
         games: state.games,
@@ -1369,12 +1783,14 @@
               'This will replace all current data with the imported tournament. Continue?',
               () => {
                 state.tournamentName = data.tournamentName || 'Imported Tournament';
+                state.seasonName = data.seasonName || data.tournamentName || 'Imported Season';
                 state.formatType = data.formatType || 'double';
                 state.players = data.players;
                 state.games = data.games;
                 state.currentRound = data.currentRound || 1;
                 
                 el.tournamentName.value = state.tournamentName;
+                el.seasonName.value = state.seasonName;
                 el.formatType.value = state.formatType;
                 
                 renderPlayers();
@@ -1423,9 +1839,14 @@
     document.getElementById('generateBtn').addEventListener('click', generateSchedule);
     document.getElementById('exportBtn').addEventListener('click', exportTournament);
     document.getElementById('importBtn').addEventListener('click', importTournament);
+    document.getElementById('archiveSeasonBtn').addEventListener('click', archiveCurrentSeason);
+    document.getElementById('importArchiveBtn').addEventListener('click', importArchiveToLibrary);
+    document.getElementById('startNewSeasonBtn').addEventListener('click', startNewSeason);
     document.getElementById('resetResultsBtn').addEventListener('click', clearResults);
     document.getElementById('newTournamentBtn').addEventListener('click', resetTournament);
+    el.seasonSelect.addEventListener('change', (e) => viewSeason(e.target.value));
     el.tournamentName.addEventListener('input', syncFormToState);
+    el.seasonName.addEventListener('input', syncFormToState);
     el.formatType.addEventListener('change', syncFormToState);
 
     initApp();
